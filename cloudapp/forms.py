@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from .models import UserProfile
 
 class UserForm(forms.ModelForm):
-    password = forms.CharField(widget=forms.PasswordInput())
+    password = forms.CharField(widget=forms.PasswordInput)
 
     class Meta:
         model = User

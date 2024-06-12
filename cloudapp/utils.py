@@ -1,17 +1,20 @@
 import paramiko
+import pysftp
 
 def execute_ssh_command(hostname, port, username, key_filepath, command):
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(hostname, port, username, key_filename=key_filepath)
-    
-    stdin, stdout, stderr = ssh.exec_command(command)
-    result = stdout.read().decode('utf-8')
-    error = stderr.read().decode('utf-8')
-    
-    ssh.close()
-    
-    if error:
-        raise Exception(f"Error ejecutando comando: {error}")
-    
-    return result
+    key = paramiko.RSAKey.from_private_key_file(key_filepath)
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    client.connect(hostname, port, username, pkey=key)
+    stdin, stdout, stderr = client.exec_command(command)
+    stdout.channel.recv_exit_status()
+    client.close()
+
+def sftp_upload_file(hostname, port, username, password, local_path, remote_path):
+    try:
+        with pysftp.Connection(hostname, username=username, password=password) as sftp:
+            sftp.makedirs(remote_path.rsplit('/', 1)[0])  # Create directories if they do not exist
+            sftp.put(local_path, remote_path)
+    except Exception as e:
+        print(f"Failed to upload file via SFTP: {e}")
+        raise

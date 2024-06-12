@@ -1,9 +1,12 @@
+import os
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
-from .forms import UserForm, UserProfileForm
-from .utils import execute_ssh_command
 from django.conf import settings
+from .forms import UserForm, UserProfileForm
+from django.core.files.storage import FileSystemStorage
+from .models import UserProfile
+from .utils import execute_ssh_command, sftp_upload_file
 
 def register(request):
     if request.method == 'POST':
@@ -17,27 +20,24 @@ def register(request):
             profile.user = user
             profile.save()
 
-            # Define los comandos que necesitas ejecutar como root
-            password = user_form.cleaned_data["password"]
+            password = user_form.cleaned_data['password']
             commands = [
                 f'sudo useradd -m {user.username}',
                 f'echo "{user.username}:{password}" | sudo chpasswd',
-                f'sudo mkdir /home/{user.username}/ftp',
-                f'sudo chown nobody:nogroup /home/{user.username}/ftp',
-                f'sudo chmod a-w /home/{user.username}/ftp',
-                f'sudo mkdir /home/{user.username}/ftp/files',
-                f'sudo chown -R {user.username}:{user.username} /home/{user.username}/ftp/files'
+                f'sudo mkdir -p /home/{user.username}/ftp/files',
+                f'sudo chown {user.username}:{user.username} /home/{user.username}/ftp',
+                f'sudo chmod 755 /home/{user.username}/ftp',
+                f'sudo chown -R {user.username}:{user.username} /home/{user.username}/ftp/files',
+                f'sudo chmod 755 /home/{user.username}/ftp/files'
             ]
 
-            # Ruta de la clave privada
-            key_filepath = '/home/debian/.ssh/id_rsa'  # Asegúrate de que esta clave tiene permisos 600
+            key_filepath = '/home/debian/.ssh/id_rsa'
 
-            # Ejecutar los comandos via SSH
             for command in commands:
                 execute_ssh_command(
                     hostname=settings.FTP_SERVER_IP,
-                    port=22,  # puerto por defecto de SSH
-                    username='debian',  # usuario con permisos sudo sin contraseña
+                    port=22,
+                    username='debian',
                     key_filepath=key_filepath,
                     command=command
                 )
@@ -67,3 +67,33 @@ def home(request):
 def logout(request):
     auth_logout(request)
     return redirect('login')
+
+@login_required
+def upload_file(request):
+    if request.method == 'POST' and request.FILES['file']:
+        upload = request.FILES['file']
+        fs = FileSystemStorage()
+        filename = fs.save(upload.name, upload)
+        uploaded_file_path = fs.path(filename)
+
+        remote_path = f'/home/{request.user.username}/ftp/files/{filename}'
+
+        # Assuming the password is entered in a field in the upload form
+        password = request.POST.get('password')
+
+        try:
+            sftp_upload_file(
+                hostname=settings.FTP_SERVER_IP,
+                port=22,
+                username=request.user.username,
+                password=password,
+                local_path=uploaded_file_path,
+                remote_path=remote_path
+            )
+        except Exception as e:
+            print(f"Failed to upload file via SFTP: {e}")
+
+        fs.delete(filename)
+
+        return redirect('home')
+    return render(request, 'home.html')

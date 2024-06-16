@@ -6,7 +6,7 @@ from django.conf import settings
 from .forms import UserForm, UserProfileForm
 from django.core.files.storage import FileSystemStorage
 from .models import UserProfile
-from .utils import execute_ssh_command, sftp_upload_file
+from .utils import execute_ssh_commands, sftp_upload_file
 
 def register(request):
     if request.method == 'POST':
@@ -24,25 +24,33 @@ def register(request):
             commands = [
                 f'sudo useradd -m {user.username}',
                 f'echo "{user.username}:{password}" | sudo chpasswd',
+                f'sudo usermod -aG ftpusers {user.username}',
                 f'sudo mkdir -p /home/{user.username}/ftp/files',
-                f'sudo chown {user.username}:{user.username} /home/{user.username}/ftp',
-                f'sudo chmod 755 /home/{user.username}/ftp',
-                f'sudo chown -R {user.username}:{user.username} /home/{user.username}/ftp/files',
-                f'sudo chmod 755 /home/{user.username}/ftp/files'
+                f'sudo chown -R {user.username}:ftpusers /home/{user.username}',
+                f'sudo chmod 750 /home/{user.username}/ftp',
+                f'sudo chmod 750 /home/{user.username}/ftp/files'
             ]
 
             key_filepath = '/home/debian/.ssh/id_rsa'
 
-            for command in commands:
-                execute_ssh_command(
+            try:
+                execute_ssh_commands(
                     hostname=settings.FTP_SERVER_IP,
                     port=22,
                     username='debian',
                     key_filepath=key_filepath,
-                    command=command
+                    commands=commands
                 )
-
-            return redirect('login')
+                return redirect('login')
+            except Exception as e:
+                print(f"Failed to execute commands via SSH: {e}")
+                user.delete()
+                profile.delete()
+                return render(request, 'registration/register.html', {
+                    'user_form': user_form,
+                    'profile_form': profile_form,
+                    'error': str(e)
+                })
     else:
         user_form = UserForm()
         profile_form = UserProfileForm()

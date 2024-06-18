@@ -24,11 +24,11 @@ def register(request):
             commands = [
                 f'sudo useradd -m {user.username}',
                 f'echo "{user.username}:{password}" | sudo chpasswd',
-                f'sudo usermod -aG ftpusers {user.username}',
                 f'sudo mkdir -p /home/{user.username}/ftp/files',
-                f'sudo chown -R {user.username}:ftpusers /home/{user.username}',
-                f'sudo chmod 750 /home/{user.username}/ftp',
-                f'sudo chmod 750 /home/{user.username}/ftp/files'
+                f'sudo chown nobody:bareos /home/{user.username}',
+                f'sudo chown nobody:bareos /home/{user.username}/ftp',
+                f'sudo chmod a-w /home/{user.username}/ftp',
+                f'sudo chown -R {user.username}:bareos /home/{user.username}/ftp/files'
             ]
 
             key_filepath = '/home/debian/.ssh/id_rsa'

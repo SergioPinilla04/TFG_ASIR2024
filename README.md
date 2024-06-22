@@ -1,4 +1,4 @@
-# Programación empleada en mi TFG de ASIR: "Sistema de Almacenamiento en una Nube Privada con Enfoque en Seguridad y Respaldo Incremental Automatizado".
+## Programación empleada en mi TFG de ASIR: "Sistema de Almacenamiento en una Nube Privada con Enfoque en Seguridad y Respaldo Incremental Automatizado".
 
 Este proyecto se trata de una aplicación web desarrollada con Django para gestionar usuarios FTP. La aplicación permite registrar nuevos usuarios, autenticar su acceso y subir archivos a sus directorios personales en un servidor FTP. La gestión del servidor FTP se realiza mediante comandos SSH.
 
@@ -7,7 +7,8 @@ Este proyecto se trata de una aplicación web desarrollada con Django para gesti
 1. [Funcionalidades](#funcionalidades)
 2. [Tecnologías Utilizadas](#tecnologías-utilizadas)
 3. [Estructura del Proyecto](#estructura-del-proyecto)
-4. [Licencia](#licencia)
+4. [Capturas](#capturas)
+5. [Licencia](#licencia)
 
 ## Funcionalidades
 
@@ -41,6 +42,12 @@ Este proyecto se trata de una aplicación web desarrollada con Django para gesti
 
 - **Comandos SSH (execute_ssh_commands)**: Ejecuta comandos en el servidor FTP para gestionar usuarios y permisos.
 - **Subida de Archivos SFTP (sftp_upload_file)**: Gestiona la subida de archivos al servidor FTP usando SFTP.
+
+# Capturas
+
+![register](https://github.com/SergioPinilla04/TFG_ASIR2024/assets/113448338/d82181f2-420a-4e3c-b1f2-035be81e4808)
+![login](https://github.com/SergioPinilla04/TFG_ASIR2024/assets/113448338/3f07dd7c-858a-4786-b1a0-636bdce161c5)
+![upload](https://github.com/SergioPinilla04/TFG_ASIR2024/assets/113448338/114745df-e082-47e7-a57a-888a7a0b5eb1)
 
 # Licencia
 
